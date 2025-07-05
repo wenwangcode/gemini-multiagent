@@ -2,66 +2,42 @@ import datetime
 from zoneinfo import ZoneInfo
 from google.adk.agents import Agent
 
-def get_weather(city: str) -> dict:
-    """Retrieves the current weather report for a specified city.
 
-    Args:
-        city (str): The name of the city for which to retrieve the weather report.
-
-    Returns:
-        dict: status and result or error msg.
-    """
-    if city.lower() == "new york":
-        return {
-            "status": "success",
-            "report": (
-                "The weather in New York is sunny with a temperature of 25 degrees"
-                " Celsius (77 degrees Fahrenheit)."
-            ),
-        }
+def suggest_meal(preferences: str) -> dict:
+    """Suggests a meal based on user preferences."""
+    if "vegetarian" in preferences.lower():
+        return {"status": "success", "meal": "Grilled vegetable quinoa salad with lemon dressing."}
+    elif "high protein" in preferences.lower():
+        return {"status": "success", "meal": "Grilled chicken breast with steamed broccoli and brown rice."}
+    elif "quick" in preferences.lower():
+        return {"status": "success", "meal": "Avocado toast with boiled eggs."}
     else:
-        return {
-            "status": "error",
-            "error_message": f"Weather information for '{city}' is not available.",
-        }
+        return {"status": "success", "meal": "Pasta with tomato sauce and side salad."}
 
 
-def get_current_time(city: str) -> dict:
-    """Returns the current time in a specified city.
+def generate_grocery_list(meal_plan: list[str]) -> dict:
+    """Generates a grocery list based on the selected meal plan."""
+    grocery_db = {
+        "Grilled vegetable quinoa salad with lemon dressing.": ["Quinoa", "Bell peppers", "Zucchini", "Lemon", "Olive oil"],
+        "Grilled chicken breast with steamed broccoli and brown rice.": ["Chicken breast", "Broccoli", "Brown rice"],
+        "Avocado toast with boiled eggs.": ["Bread", "Avocado", "Eggs"],
+        "Pasta with tomato sauce and side salad.": ["Pasta", "Tomato sauce", "Lettuce", "Cucumber"]
+    }
 
-    Args:
-        city (str): The name of the city for which to retrieve the current time.
+    grocery_list = []
+    for meal in meal_plan:
+        grocery_list.extend(grocery_db.get(meal, []))
 
-    Returns:
-        dict: status and result or error msg.
-    """
+    if not grocery_list:
+        return {"status": "error", "error_message": "No grocery items found for the selected meals."}
 
-    if city.lower() == "new york":
-        tz_identifier = "America/New_York"
-    else:
-        return {
-            "status": "error",
-            "error_message": (
-                f"Sorry, I don't have timezone information for {city}."
-            ),
-        }
-
-    tz = ZoneInfo(tz_identifier)
-    now = datetime.datetime.now(tz)
-    report = (
-        f'The current time in {city} is {now.strftime("%Y-%m-%d %H:%M:%S %Z%z")}'
-    )
-    return {"status": "success", "report": report}
+    return {"status": "success", "grocery_list": list(set(grocery_list))}
 
 
 root_agent = Agent(
     name="weather_time_agent",
     model="gemini-2.0-flash",
-    description=(
-        "Agent to answer questions about the time and weather in a city."
-    ),
-    instruction=(
-        "You are a helpful agent who can answer user questions about the time and weather in a city."
-    ),
-    tools=[get_weather, get_current_time],
+    description="Agent to suggest meals and generate grocery lists based on preferences.",
+    instruction="You help users plan meals based on their preferences and create efficient grocery lists.",
+    tools=[suggest_meal, generate_grocery_list],
 )
