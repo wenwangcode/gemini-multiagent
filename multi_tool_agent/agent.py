@@ -1,18 +1,35 @@
-import datetime
 from zoneinfo import ZoneInfo
 from google.adk.agents import Agent
+import requests
 
 
 def suggest_meal(preferences: str) -> dict:
-    """Suggests a meal based on user preferences."""
-    if "vegetarian" in preferences.lower():
-        return {"status": "success", "meal": "Grilled vegetable quinoa salad with lemon dressing."}
-    elif "high protein" in preferences.lower():
-        return {"status": "success", "meal": "Grilled chicken breast with steamed broccoli and brown rice."}
-    elif "quick" in preferences.lower():
-        return {"status": "success", "meal": "Avocado toast with boiled eggs."}
-    else:
-        return {"status": "success", "meal": "Pasta with tomato sauce and side salad."}
+    """Suggests a meal based on user preferences using TheMealDB API."""
+    try:
+        if "vegetarian" in preferences.lower():
+            url = "https://www.themealdb.com/api/json/v1/1/filter.php?c=Vegetarian"
+        elif "chicken" in preferences.lower() or "high protein" in preferences.lower():
+            url = "https://www.themealdb.com/api/json/v1/1/filter.php?i=Chicken"
+        else:
+            url = "https://www.themealdb.com/api/json/v1/1/random.php"
+
+        response = requests.get(url)
+        response.raise_for_status()
+        data = response.json()
+
+        if "meals" in data and data["meals"]:
+            meal = data["meals"][0]
+            return {
+                "status": "success",
+                "meal": meal.get("strMeal"),
+                "image": meal.get("strMealThumb"),
+                "id": meal.get("idMeal")
+            }
+        else:
+            return {"status": "error", "error_message": "No meals found matching your preferences."}
+
+    except Exception as e:
+        return {"status": "error", "error_message": str(e)}
 
 
 def generate_grocery_list(meal_plan: list[str]) -> dict:
